@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Team Up Americano - Padel 44</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #F3F5F9;
+            --card-bg: #FFFFFF;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            --blue-team: #3B82F6;
+            --red-team: #EF4444;
+            --green-accent: #10B981;
+            --input-bg: #F1F5F9;
+            --border-soft: #E2E8F0;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 0 20px 20px 20px; 
+            background-color: var(--bg-color);
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* PIN-KODS SKÄRM */
+        #pinOverlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--bg-color); z-index: 10000;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.4s ease;
+        }
+        .pin-card {
+            background: var(--card-bg); padding: 40px 30px; border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.1); text-align: center; max-width: 340px; width: 100%;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        .pin-card h2 { font-size: 24px; margin-top: 0; margin-bottom: 8px; justify-content: center;}
+        .pin-card p { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5;}
+        #pinInput { 
+            font-size: 24px; letter-spacing: 8px; font-weight: 800; padding: 16px; text-align: center;
+            margin-bottom: 16px; width: 100%; border-radius: 16px; border: 2px solid var(--border-soft);
+            background: var(--input-bg);
+        }
+        #pinInput:focus { border-color: var(--text-main); outline: none; background: #fff;}
+        .error-msg { color: var(--red-team); font-size: 13px; font-weight: 600; margin-top: -8px; margin-bottom: 16px; display: none; height: 16px;}
+        
+        .container { max-width: 100%; margin: 0 auto; width: 100%; position: relative; display: none;}
+        
+        /* EXKLUSIV BRANDING */
+        .brand-badge {
+            display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1);
+            color: var(--green-accent); padding: 6px 14px; border-radius: 999px; font-size: 12px;
+            font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px;
+        }
+        .brand-badge .dot {
+            width: 6px; height: 6px; background: var(--green-accent); border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .footer-brand {
+            text-align: center; margin-top: 40px; padding: 20px 0; color: #94A3B8; font-size: 13px; font-weight: 500;
+        }
+        .footer-brand strong { color: var(--text-muted); font-weight: 700; }
+
+        /* HEADER STYLING */
+        .header-container { text-align: center; margin-bottom: 24px; padding-top: 20px; }
+        .app-title { font-size: 42px; margin: 0; font-weight: 800; letter-spacing: -1px; color: var(--text-main); }
+        
+        .card { 
+            background: var(--card-bg); padding: 32px; border-radius: 24px; 
+            box-shadow: 0 12px 36px -12px rgba(15, 23, 42, 0.08); margin-bottom: 24px; 
+            width: 100%; border: 1px solid rgba(255,255,255,0.5);
+        }
+        
+        input[type="text"], input[type="number"] { 
+            width: 100%; padding: 12px 16px; background: var(--input-bg); border: 2px solid transparent; 
+            border-radius: 12px; font-size: 15px; font-family: 'Inter', sans-serif; font-weight: 500; 
+            color: var(--text-main); transition: all 0.2s ease; 
+        }
+        input[type="text"]:focus, input[type="number"]:focus { 
+            outline: none; border-color: #CBD5E1; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        input[type="number"] { width: 56px; text-align: center; padding: 12px 0; font-size: 16px; font-weight: 700;}
+
+        /* STICKY TUG-BAR */
+        .tug-container { 
+            padding: 40px 32px 32px 32px; 
+            text-align: center; 
+            margin-bottom: 24px; 
+            box-shadow: 0 16px 32px -12px rgba(15, 23, 42, 0.2); 
+            position: -webkit-sticky;
+            position: sticky;
+            top: 10px;
+            z-index: 999;
+        }
+        .tug-wrapper-outer { position: relative; width: 100%; margin-top: 10px; }
+        .tug-bar-wrapper { height: 48px; width: 100%; border-radius: 999px; background: var(--input-bg); position: relative; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06); }
+        .tug-bar-fill { height: 100%; width: 100%; background: linear-gradient(to right, var(--blue-team) 50%, var(--red-team) 50%); transition: background 0.5s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
+        
+        #floatingScore { 
+            position: absolute; top: -46px; font-size: 20px; font-weight: 800; color: #fff; 
+            background: var(--text-main); transform: translateX(-50%); transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+            z-index: 10; padding: 6px 16px; border-radius: 12px; box-shadow: 0 8px 16px rgba(15, 23, 42, 0.2); 
+        }
+        #floatingScore::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            border-width: 5px 5px 0; border-style: solid; border-color: var(--text-main) transparent transparent transparent;
+        }
+        
+        .bar-score { position: absolute; top: 50%; color: rgba(255,255,255,0.95); font-weight: 700; font-size: 18px; z-index: 5; transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .blue-bar-score { transform: translate(-100%, -50%); } 
+        .red-bar-score { transform: translate(0, -50%); } 
+        .small-decimal { font-size: 0.7em; opacity: 0.8;}
+
+        /* KOMPAKT LAG-SAMMANFATTNING MED MINIBRICKOR */
+        .team-summary {
+            display: flex; gap: 16px; margin-bottom: 24px; background: var(--input-bg);
+            padding: 16px; border-radius: 16px; border: 1px solid var(--border-soft);
+        }
+        .summary-col { flex: 1; }
+        .summary-col h4 { margin: 0 0 10px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800;}
+        
+        .summary-names { display: flex; flex-wrap: wrap; gap: 6px; }
+        .summary-col:nth-child(2) .summary-names { justify-content: flex-end; }
+        
+        .mini-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;
+            color: #ffffff; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid transparent; transition: all 0.3s ease;
+        }
+        .badge-blue { background-color: var(--blue-team); }
+        .badge-red { background-color: var(--red-team); }
+        
+        /* MVP STYLING */
+        .mvp-glow {
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.6) !important;
+            border-color: #FBBF24;
+            transform: scale(1.05);
+        }
+
+        /* SPELSCHEMA */
+        #scheduleCard { display: none; } 
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        th { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px 16px 12px; border-bottom: 2px solid var(--border-soft); text-align: center; white-space: nowrap;}
+        td { padding: 16px 12px; text-align: center; font-size: 15px; font-weight: 500; border-bottom: 1px solid var(--border-soft); }
+        
+        .round-even td { background-color: #F8FAFC; }
+        
+        .round-cell { text-align: center; vertical-align: middle; border-right: 1px solid var(--border-soft); }
+        .multiplier-badge { display: inline-block; background: var(--border-soft); color: var(--text-muted); font-size: 11px; font-weight: 700; padding: 3px 6px; border-radius: 6px; margin-top: 6px; }
+
+        .result-cell { white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 8px;}
+        .result-cell span { color: var(--text-muted); font-weight: 400; }
+
+        .team-name-wrapper { display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .p-name { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+        .p-sep { color: var(--text-muted); font-weight: 400; opacity: 0.5; }
+
+        /* KNAPPAR */
+        .btn { 
+            padding: 14px 24px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 15px; 
+            font-family: 'Inter', sans-serif; border: none; transition: all 0.2s ease; 
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        .btn:active { transform: translateY(0); }
+        
+        .btn-danger { background-color: #FEF2F2; color: var(--red-team); }
+        .btn-danger:hover { background-color: #FEE2E2; }
+        .btn-primary { background-color: var(--text-main); color: white; }
+        .btn-primary:hover { background-color: #334155; }
+        .btn-green { background-color: var(--green-accent); color: white; width: 100%; font-size: 18px; padding: 18px; border-radius: 16px; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2);}
+        .btn-green:hover { background-color: #059669; }
+
+        /* DRAFT-RUTNÄTET */
+        .team-headers { display: none; justify-content: space-between; padding: 0 10px; margin-bottom: -10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 14px;}
+        .pool-grid { display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        .pool-input { 
+            padding: 16px; background: var(--input-bg); border: 2px solid transparent; 
+            border-radius: 16px; font-size: 15px; text-align: center; font-weight: 600; 
+            color: var(--text-main); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .red-team-input { background-color: var(--red-team) !important; color: #fff !important; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3); }
+        .blue-team-input { background-color: var(--blue-team) !important; color: #fff !important; box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3); }
+
+        /* Spelarantal-väljare */
+        .player-selector { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .player-selector .btn { flex: 1; min-width: 120px; padding: 16px 12px; font-size: 15px; }
+
+        /* MODALER */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 20px;}
+        .modal { background: white; padding: 32px; border-radius: 24px; text-align: center; max-width: 400px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .modal h2 { justify-content: center; font-size: 24px; margin-bottom: 12px; color: var(--text-main); margin-top: 0;}
+        .modal p { color: var(--text-muted); line-height: 1.5; margin-bottom: 24px;}
+        .team-btn-container { display: flex; flex-direction: column; gap: 12px; }
+
+        /* MOBIL-OPTIMERINGAR */
+        @media (max-width: 600px) {
+            body { padding: 0 10px 20px 10px; } 
+            .card { padding: 20px 12px; border-radius: 20px; } 
+            .app-title { font-size: 32px; }
+            .header-container { padding-top: 10px; }
+            
+            .sticky-top-area { display: contents; }
+            .tug-container { padding: 35px 15px 20px 15px; position: -webkit-sticky; position: sticky; top: 10px; z-index: 900;}
+            
+            .pool-input { padding: 12px; font-size: 14px; }
+            .player-selector .btn { padding: 14px 8px; font-size: 14px; min-width: 90px; }
+            
+            th { font-size: 11px; padding: 0 4px 12px 4px; }
+            td { padding: 12px 4px; font-size: 13px; }
+            input[type="number"] { width: 44px; padding: 10px 0; font-size: 15px; }
+            .result-cell { gap: 4px; }
+            .team-name-wrapper { flex-direction: column; gap: 3px; }
+            .p-sep { display: none; } 
+            .p-name { max-width: 68px; font-size: 12px; line-height: 1.2;}
+        }
+    </style>
+</head>
+<body>
+
+<div id="pinOverlay">
+    <div class="pin-card">
+        <h2 style="display:flex; align-items:center; gap:8px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            Säker inloggning
+        </h2>
+        <p>Ange PIN-kod för att öppna Padel 44's Americano-verktyg.</p>
+        <input type="password" inputmode="numeric" id="pinInput" maxlength="4" placeholder="••••">
+        <div class="error-msg" id="pinError">Fel PIN-kod. Försök igen.</div>
+        <button class="btn btn-primary" style="width:100%;" onclick="checkPin()">Lås upp</button>
+    </div>
+</div>
+
+<div class="container" id="appContainer">
+    
+    <div class="header-container">
+        <div class="brand-badge">
+            <span class="dot"></span> Padel 44 Original
+        </div>
+        <h1 class="app-title">Team Up Americano</h1>
+    </div>
+
+    <div class="card tug-container" id="tugCard">
+        <div class="tug-wrapper-outer">
+            <div id="floatingScore">0</div>
+            <div class="tug-bar-wrapper">
+                <div class="tug-bar-fill" id="tugBar"></div>
+                <div id="blueScoreText" class="bar-score blue-bar-score">0</div>
+                <div id="redScoreText" class="bar-score red-bar-score">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" id="draftCard">
+        
+        <div id="playerSelector" class="player-selector">
+            <button class="btn btn-primary" onclick="selectFormat(8)">8 Spelare</button>
+            <button class="btn btn-primary" onclick="selectFormat(10)">10 Spelare</button>
+            <button class="btn btn-primary" onclick="selectFormat(12)">12 Spelare</button>
+        </div>
+
+        <div id="teamHeaders" class="team-headers">
+            <span style="color: var(--blue-team);">Lag Blå</span>
+            <span style="color: var(--red-team);">Lag Röd</span>
+        </div>
+        
+        <div id="poolGrid" class="pool-grid"></div>
+
+        <div style="margin-top: 32px;">
+            <button class="btn btn-green" id="btnShuffle" onclick="startShuffle()" style="display:none;">Slumpa Lagen</button>
+            
+            <div id="postShuffleBtns" style="display:none; gap: 16px; flex-direction: column;">
+                <button class="btn btn-green" onclick="assignDraftedTeams()">Skapa spelschema</button>
+                <button class="btn btn-primary" onclick="startShuffle()" style="width: 100%; padding: 16px;">Blanda om</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" id="scheduleCard">
+        
+        <div class="team-summary">
+            <div class="summary-col">
+                <h4 style="color: var(--blue-team);">Lag Blå</h4>
+                <div id="summaryBlue" class="summary-names"></div>
+            </div>
+            <div class="summary-col" style="text-align: right;">
+                <h4 style="color: var(--red-team);">Lag Röd</h4>
+                <div id="summaryRed" class="summary-names"></div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <tr><th>Runda</th><th>Lag Blå</th><th>Lag Röd</th><th>Resultat</th></tr>
+                <tbody id="matchTable"></tbody>
+            </table>
+        </div>
+        
+        <div style="display: flex; gap: 12px; justify-content: center; margin-top: 32px; flex-wrap: wrap;">
+            <button class="btn btn-danger" id="btnOpenResultsModal">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                Rensa poäng
+            </button>
+            <button class="btn btn-danger" id="btnOpenPoolModal" style="background-color: var(--input-bg); color: var(--text-main);">
+                Börja om (Nya lag)
+            </button>
+        </div>
+    </div>
+
+    <div class="footer-brand">
+        Designad exklusivt för <strong>Padel 44 Group AB</strong>
+    </div>
+
+</div>
+
+<div class="modal-overlay" id="clearResultsModal">
+    <div class="modal">
+        <h2>Rensa resultat?</h2>
+        <p>Vill du verkligen rensa alla poäng? Detta nollställer ställningen i turneringen (men behåller lagen).</p>
+        <div class="team-btn-container">
+            <button class="btn btn-primary" id="btnConfirmClearResults">Ja, rensa allt</button>
+            <button class="btn btn-danger" id="btnCancelClearResults" style="background: var(--input-bg); color: var(--text-main);">Avbryt</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="clearPoolModal">
+    <div class="modal">
+        <h2>Börja om helt?</h2>
+        <p>Vill du ta bort laguppställningen och nollställa formatet för att starta en helt ny omgång?</p>
+        <div class="team-btn-container">
+            <button class="btn btn-primary" id="btnConfirmClearPool">Ja, återställ</button>
+            <button class="btn btn-danger" id="btnCancelClearPool" style="background: var(--input-bg); color: var(--text-main);">Avbryt</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ======= PIN KOD INSTÄLLNINGAR =======
+    const CORRECT_PIN = '4991'; 
+
+    function checkAuthStatus() {
+        const isAuth = localStorage.getItem('padel44_auth');
+        if (isAuth === 'true') {
+            document.getElementById('pinOverlay').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            initApp();
+        } else {
+            document.getElementById('pinInput').focus();
+        }
+    }
+
+    function checkPin() {
+        const input = document.getElementById('pinInput').value;
+        const errorMsg = document.getElementById('pinError');
+        
+        if (input === CORRECT_PIN) {
+            localStorage.setItem('padel44_auth', 'true');
+            errorMsg.style.display = 'none';
+            
+            document.getElementById('pinOverlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('pinOverlay').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'block';
+                initApp();
+            }, 400);
+        } else {
+            errorMsg.style.display = 'block';
+            document.getElementById('pinInput').value = '';
+            document.getElementById('pinInput').focus();
+        }
+    }
+
+    document.getElementById('pinInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') checkPin();
+    });
+
+    // ======= APPENS HUVUDKOD =======
+    const memory = {
+        save: function(key, data) { try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {} },
+        load: function(key, fallback) {
+            try { 
+                let data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : fallback;
+            } catch(e) { return fallback; }
+        }
+    };
+
+    let playersA, playersB, poolNames, matchScores, shuffleInterval, draftedBlue, draftedRed;
+    let playerCount = 10; 
+    let formatSelected = false; 
+    let currentSchedule = [];
+    
+    // Spelschema för 8 spelare
+    const schedule8 = [
+        { round: 1, a: [0, 1], b: [0, 1] }, { round: 1, a: [2, 3], b: [2, 3] },
+        { round: 2, a: [0, 2], b: [0, 2] }, { round: 2, a: [1, 3], b: [1, 3] },
+        { round: 3, a: [0, 3], b: [0, 3] }, { round: 3, a: [1, 2], b: [1, 2] },
+        { round: 4, a: [0, 1], b: [2, 3] }, { round: 4, a: [2, 3], b: [0, 1] }
+    ];
+
+    // Spelschema för 10 spelare
+    const schedule10 = [
+        { round: 1, a: [0, 1], b: [0, 1] }, { round: 1, a: [2, 3], b: [2, 3] },
+        { round: 2, a: [0, 2], b: [0, 4] }, { round: 2, a: [1, 4], b: [1, 2] },
+        { round: 3, a: [0, 4], b: [0, 3] }, { round: 3, a: [1, 3], b: [1, 4] },
+        { round: 4, a: [0, 3], b: [0, 2] }, { round: 4, a: [2, 4], b: [3, 4] },
+        { round: 5, a: [1, 2], b: [1, 3] }, { round: 5, a: [3, 4], b: [2, 4] }
+    ];
+
+    // Spelschema för 12 spelare
+    const schedule12 = [
+        { round: 1, a: [0, 1], b: [3, 5] }, { round: 1, a: [2, 3], b: [1, 4] },
+        { round: 2, a: [4, 5], b: [0, 3] }, { round: 2, a: [0, 2], b: [1, 2] },
+        { round: 3, a: [1, 4], b: [2, 4] }, { round: 3, a: [3, 5], b: [1, 5] },
+        { round: 4, a: [0, 3], b: [0, 2] }, { round: 4, a: [2, 4], b: [3, 4] },
+        { round: 5, a: [1, 5], b: [0, 1] }, { round: 5, a: [0, 4], b: [2, 5] },
+        { round: 6, a: [1, 3], b: [4, 5] }, { round: 6, a: [2, 5], b: [2, 3] },
+        { round: 7, a: [0, 5], b: [0, 4] }, { round: 7, a: [3, 4], b: [1, 3] },
+        { round: 8, a: [1, 2], b: [0, 5] }
+    ];
+
+    function initApp() {
+        playerCount = memory.load('padel_playerCount', 10);
+        formatSelected = memory.load('padel_formatSelected', false);
+        playersA = memory.load('padel_playersA', Array(6).fill("")); 
+        playersB = memory.load('padel_playersB', Array(6).fill("")); 
+        poolNames = memory.load('padel_poolNames', Array(12).fill(""));
+        
+        currentSchedule = playerCount === 12 ? schedule12 : (playerCount === 10 ? schedule10 : schedule8);
+        matchScores = memory.load('padel_scores', Array.from({length: currentSchedule.length}, () => ({a: "", b: ""})));
+
+        setupEventListeners();
+        renderPoolInputs();
+        renderSchedule();
+    }
+
+    function selectFormat(num) {
+        playerCount = num;
+        formatSelected = true;
+        currentSchedule = playerCount === 12 ? schedule12 : (playerCount === 10 ? schedule10 : schedule8);
+        
+        poolNames = Array(12).fill("");
+        playersA = Array(6).fill("");
+        playersB = Array(6).fill("");
+        matchScores = Array.from({length: currentSchedule.length}, () => ({a: "", b: ""}));
+        
+        saveData();
+        renderPoolInputs();
+        renderSchedule();
+    }
+
+    function saveData() {
+        memory.save('padel_playerCount', playerCount);
+        memory.save('padel_formatSelected', formatSelected);
+        memory.save('padel_playersA', playersA);
+        memory.save('padel_playersB', playersB);
+        memory.save('padel_poolNames', poolNames);
+        let scores = [];
+        currentSchedule.forEach((match, index) => {
+            let inputA = document.getElementById(`scoreA_${index}`);
+            let inputB = document.getElementById(`scoreB_${index}`);
+            scores.push({ a: inputA ? inputA.value : "", b: inputB ? inputB.value : "" });
+        });
+        matchScores = scores;
+        memory.save('padel_scores', scores);
+    }
+
+    function setupEventListeners() {
+        document.getElementById('btnOpenResultsModal').addEventListener('click', () => document.getElementById('clearResultsModal').style.display = 'flex');
+        document.getElementById('btnCancelClearResults').addEventListener('click', () => document.getElementById('clearResultsModal').style.display = 'none');
+        document.getElementById('btnConfirmClearResults').addEventListener('click', confirmClearResults);
+
+        document.getElementById('btnOpenPoolModal').addEventListener('click', () => document.getElementById('clearPoolModal').style.display = 'flex');
+        document.getElementById('btnCancelClearPool').addEventListener('click', () => document.getElementById('clearPoolModal').style.display = 'none');
+        document.getElementById('btnConfirmClearPool').addEventListener('click', confirmClearPool);
+    }
+
+    function isDrafted() {
+        return playersA.some(name => name !== "") || playersB.some(name => name !== "");
+    }
+
+    function renderPoolInputs() {
+        const container = document.getElementById('poolGrid');
+        container.innerHTML = "";
+        let drafted = isDrafted();
+        
+        if (!formatSelected) {
+            document.getElementById('playerSelector').style.display = 'flex';
+            container.style.display = 'none';
+            document.getElementById('teamHeaders').style.display = 'none';
+            document.getElementById('btnShuffle').style.display = 'none';
+            document.getElementById('postShuffleBtns').style.display = 'none';
+            return; 
+        } else {
+            document.getElementById('playerSelector').style.display = 'none';
+            container.style.display = 'grid';
+            document.getElementById('teamHeaders').style.display = drafted ? 'flex' : 'none';
+        }
+
+        let playersPerTeam = playerCount / 2;
+
+        for(let i=0; i<playersPerTeam; i++) {
+            let valLeft = drafted ? playersA[i] : (poolNames[i*2] || "");
+            let classLeft = drafted ? "pool-input blue-team-input" : "pool-input";
+            
+            let valRight = drafted ? playersB[i] : (poolNames[i*2 + 1] || "");
+            let classRight = drafted ? "pool-input red-team-input" : "pool-input";
+
+            container.innerHTML += `<input type="text" class="${classLeft}" id="poolName_${i*2}" value="${valLeft}" placeholder="Spelare ${i*2+1}" onchange="updatePoolNames()" onfocus="this.select()">`;
+            container.innerHTML += `<input type="text" class="${classRight}" id="poolName_${i*2+1}" value="${valRight}" placeholder="Spelare ${i*2+2}" onchange="updatePoolNames()" onfocus="this.select()">`;
+        }
+
+        let postShuffleVisible = document.getElementById('postShuffleBtns').style.display !== 'none';
+        if(!drafted && !postShuffleVisible) {
+            document.getElementById('btnShuffle').style.display = 'block';
+        } else {
+            document.getElementById('btnShuffle').style.display = 'none';
+        }
+    }
+
+    function updatePoolNames() {
+        let drafted = isDrafted();
+        let playersPerTeam = playerCount / 2;
+        for(let i=0; i<playersPerTeam; i++) {
+            if(drafted) {
+                playersA[i] = document.getElementById(`poolName_${i*2}`).value;
+                playersB[i] = document.getElementById(`poolName_${i*2+1}`).value;
+            } else {
+                poolNames[i*2] = document.getElementById(`poolName_${i*2}`).value;
+                poolNames[i*2+1] = document.getElementById(`poolName_${i*2+1}`).value;
+            }
+        }
+        saveData();
+        if(drafted) renderSchedule(); 
+    }
+
+    function renderSchedule() {
+        let drafted = isDrafted();
+        
+        document.getElementById('draftCard').style.display = drafted ? 'none' : 'block';
+        document.getElementById('scheduleCard').style.display = drafted ? 'block' : 'none';
+        document.getElementById('tugCard').style.display = 'block';
+
+        const table = document.getElementById('matchTable');
+        table.innerHTML = ""; 
+        currentSchedule.forEach((match, index) => {
+            let scoreA = matchScores[index] ? matchScores[index].a : "";
+            let scoreB = matchScores[index] ? matchScores[index].b : "";
+            
+            let pA1 = playersA[match.a[0]] ? playersA[match.a[0]] : `B${match.a[0]+1}`;
+            let pA2 = playersA[match.a[1]] ? playersA[match.a[1]] : `B${match.a[1]+1}`;
+            let pB1 = playersB[match.b[0]] ? playersB[match.b[0]] : `R${match.b[0]+1}`;
+            let pB2 = playersB[match.b[1]] ? playersB[match.b[1]] : `R${match.b[1]+1}`;
+            
+            const nameStringA = `<div class="team-name-wrapper"><span class="p-name">${pA1}</span><span class="p-sep">/</span><span class="p-name">${pA2}</span></div>`;
+            const nameStringB = `<div class="team-name-wrapper"><span class="p-name">${pB1}</span><span class="p-sep">/</span><span class="p-name">${pB2}</span></div>`;
+            
+            let bgClass = match.round % 2 === 0 ? "round-even" : "round-odd";
+            let multiplier = 1 + (match.round - 1) * 0.2;
+
+            let rowHtml = `<tr class="${bgClass}">`;
+            
+            if(index % 2 === 0 || index === 14) {
+                rowHtml += `<td rowspan="${(index === 14 && playerCount === 12) ? 1 : 2}" class="round-cell">
+                    <div style="font-weight:700; color:var(--text-muted); font-size:14px;">${match.round}</div>
+                    <div class="multiplier-badge">x${multiplier.toFixed(1)}</div>
+                </td>`;
+            }
+
+            rowHtml += `
+                <td style="color:var(--blue-team);">${nameStringA}</td>
+                <td style="color:var(--red-team);">${nameStringB}</td>
+                <td class="result-cell">
+                    <input type="number" min="0" id="scoreA_${index}" value="${scoreA}" oninput="calculate()" onfocus="this.select()">
+                    <span>-</span>
+                    <input type="number" min="0" id="scoreB_${index}" value="${scoreB}" oninput="calculate()" onfocus="this.select()">
+                </td>
+            </tr>`;
+            
+            table.innerHTML += rowHtml;
+        });
+        
+        // Kallar på calculate för att bygga MVP-brickorna direkt vid laddning
+        calculate();
+    }
+
+    function confirmClearResults() {
+        matchScores = Array.from({length: currentSchedule.length}, () => ({a: "", b: ""})); 
+        currentSchedule.forEach((match, index) => {
+            let inputA = document.getElementById(`scoreA_${index}`);
+            let inputB = document.getElementById(`scoreB_${index}`);
+            if(inputA) inputA.value = "";
+            if(inputB) inputB.value = "";
+        });
+        calculate(); 
+        document.getElementById('clearResultsModal').style.display = 'none';
+    }
+
+    function confirmClearPool() {
+        formatSelected = false; 
+        poolNames = Array(12).fill(""); 
+        playersA = Array(6).fill("");
+        playersB = Array(6).fill("");
+        
+        // Rensa resultatfälten direkt i gränssnittet och i minnet
+        matchScores = Array.from({length: currentSchedule.length}, () => ({a: "", b: ""}));
+        currentSchedule.forEach((match, index) => {
+            let inputA = document.getElementById(`scoreA_${index}`);
+            let inputB = document.getElementById(`scoreB_${index}`);
+            if(inputA) inputA.value = "";
+            if(inputB) inputB.value = "";
+        });
+
+        document.getElementById('postShuffleBtns').style.display = 'none';
+        saveData();
+        renderPoolInputs(); 
+        renderSchedule();
+        calculate();
+        
+        // Stäng modalen
+        document.getElementById('clearPoolModal').style.display = 'none';
+        
+        // -----------------------------------------------------
+        // HÅRD OCH DIREKT SCROLLNING FÖR ATT SÄKRA UPP FUNKTIONEN
+        // -----------------------------------------------------
+        
+        // 1. Försök scrolla direkt
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+
+        // 2. Försök igen efter en mikropaus när webbläsaren har ritat om skärmen
+        setTimeout(() => {
+            window.scrollTo(0, 0);
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        }, 50);
+    }
+
+    function formatScore(score) {
+        let parts = score.toString().split('.');
+        if (parts.length > 1) {
+            return `${parts[0]}<span class="small-decimal">.${parts[1]}</span>`;
+        }
+        return parts[0];
+    }
+
+    function calculate() {
+        let totalA = 0, totalB = 0;
+        let playersPerTeam = playerCount / 2;
+        let pointsA = Array(playersPerTeam).fill(0);
+        let pointsB = Array(playersPerTeam).fill(0);
+        let matchesPlayed = false;
+        
+        currentSchedule.forEach((match, index) => {
+            let inputA = document.getElementById(`scoreA_${index}`);
+            let inputB = document.getElementById(`scoreB_${index}`);
+            
+            let valA = parseInt(inputA.value) || 0;
+            let valB = parseInt(inputB.value) || 0;
+            
+            if (inputA && inputB && (inputA.value !== "" || inputB.value !== "")) {
+                if (valA > 0 || valB > 0) matchesPlayed = true;
+            }
+
+            let multiplier = 1 + (match.round - 1) * 0.2;
+            
+            totalA += valA * multiplier;
+            totalB += valB * multiplier;
+
+            pointsA[match.a[0]] += valA * multiplier;
+            pointsA[match.a[1]] += valA * multiplier;
+            pointsB[match.b[0]] += valB * multiplier;
+            pointsB[match.b[1]] += valB * multiplier;
+        });
+
+        totalA = Math.round(totalA * 10) / 10;
+        totalB = Math.round(totalB * 10) / 10;
+
+        let totalPoints = totalA + totalB;
+        let percentA = totalPoints === 0 ? 50 : (totalA / totalPoints) * 100;
+        
+        document.getElementById('tugBar').style.background = `linear-gradient(to right, var(--blue-team) ${percentA}%, var(--red-team) ${percentA}%)`;
+        
+        let blueScoreText = document.getElementById('blueScoreText');
+        let redScoreText = document.getElementById('redScoreText');
+        let floatingScore = document.getElementById('floatingScore');
+
+        blueScoreText.innerHTML = formatScore(totalA);
+        redScoreText.innerHTML = formatScore(totalB);
+
+        blueScoreText.style.left = `calc(${percentA}% - 16px)`;
+        redScoreText.style.left = `calc(${percentA}% + 16px)`;
+
+        if (totalA === totalB) {
+            floatingScore.innerHTML = `0`;
+        } else {
+            let diff = Math.round(Math.abs(totalA - totalB) * 10) / 10;
+            floatingScore.innerHTML = diff;
+        }
+        floatingScore.style.left = `${percentA}%`;
+
+        // ==== MVP-LOGIK ====
+        if (isDrafted()) {
+            let maxA = Math.max(...pointsA);
+            let maxB = Math.max(...pointsB);
+            
+            let bNamesHtml = '';
+            let rNamesHtml = '';
+            
+            for(let i=0; i<playersPerTeam; i++) {
+                let pBlue = playersA[i] || `B${i+1}`;
+                let pRed = playersB[i] || `R${i+1}`;
+                
+                // Bestäm vilka som ska ha stjärnor
+                let isMvpA = matchesPlayed && pointsA[i] === maxA && maxA > 0;
+                let isMvpB = matchesPlayed && pointsB[i] === maxB && maxB > 0;
+                
+                let starSvg = `<svg style="display:inline-block; margin-left:2px;" width="14" height="14" viewBox="0 0 24 24" fill="#FBBF24" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+                
+                bNamesHtml += `<span class="mini-badge badge-blue${isMvpA ? ' mvp-glow' : ''}">${pBlue}${isMvpA ? starSvg : ''}</span>`;
+                rNamesHtml += `<span class="mini-badge badge-red${isMvpB ? ' mvp-glow' : ''}">${pRed}${isMvpB ? starSvg : ''}</span>`;
+            }
+            
+            document.getElementById('summaryBlue').innerHTML = bNamesHtml;
+            document.getElementById('summaryRed').innerHTML = rNamesHtml;
+        }
+        
+        saveData(); 
+    }
+
+    function startShuffle() {
+        for(let i=0; i<playerCount; i++) {
+            let val = document.getElementById(`poolName_${i}`).value.trim();
+            if(!val) document.getElementById(`poolName_${i}`).value = `Spelare ${i+1}`;
+        }
+        updatePoolNames();
+
+        document.getElementById('btnShuffle').style.display = 'none';
+        document.getElementById('postShuffleBtns').style.display = 'none';
+        
+        let inputs = document.querySelectorAll('.pool-input');
+        let shuffleTime = 0;
+        
+        shuffleInterval = setInterval(() => {
+            inputs.forEach(input => {
+                let isBlue = Math.random() > 0.5;
+                input.style.backgroundColor = isBlue ? 'var(--blue-team)' : 'var(--red-team)'; 
+                input.style.color = '#ffffff'; 
+            });
+            shuffleTime += 100;
+            
+            if(shuffleTime >= 3000) {
+                clearInterval(shuffleInterval);
+                finalizeShuffle();
+            }
+        }, 100);
+    }
+
+    function finalizeShuffle() {
+        let inputs = document.querySelectorAll('.pool-input');
+        let indices = Array.from({length: playerCount}, (_, i) => i);
+        indices.sort(() => Math.random() - 0.5);
+        
+        let mid = playerCount / 2;
+        draftedBlue = indices.slice(0, mid);
+        draftedRed = indices.slice(mid, playerCount);
+
+        inputs.forEach((input, index) => {
+            if(draftedBlue.includes(index)) {
+                input.style.backgroundColor = 'var(--blue-team)'; 
+                input.style.borderColor = 'transparent';
+                input.style.color = '#ffffff';
+                input.style.boxShadow = '0 8px 16px rgba(59, 130, 246, 0.3)';
+            } else {
+                input.style.backgroundColor = 'var(--red-team)'; 
+                input.style.borderColor = 'transparent';
+                input.style.color = '#ffffff';
+                input.style.boxShadow = '0 8px 16px rgba(239, 68, 68, 0.3)';
+            }
+        });
+
+        document.getElementById('postShuffleBtns').style.display = 'flex';
+    }
+
+    function assignDraftedTeams() {
+        let mid = playerCount / 2;
+        for(let i=0; i<mid; i++) {
+            playersA[i] = poolNames[draftedBlue[i]];
+            playersB[i] = poolNames[draftedRed[i]];
+        }
+        poolNames = Array(12).fill("");
+        
+        renderPoolInputs(); 
+        renderSchedule(); 
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkAuthStatus);
+    } else {
+        checkAuthStatus();
+    }
+</script>
+</body>
+</html>
